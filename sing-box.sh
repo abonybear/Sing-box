@@ -1126,21 +1126,24 @@ if [ ${check_singbox} -eq 0 ]; then
 
         3)
             reading "请输入新的订阅端口(1-65535):" sub_port
-            [ -z "$sub_port" ] && sub_port=$(shuf -i 2000-65000 -n 1)
-            until [[ -z $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$sub_port") ]]; do
-                if [[ -n $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$sub_port") ]]; then
-                    echo -e "${red}${new_port}端口已经被其他程序占用，请更换端口重试${re}"
-                    reading "请输入新的订阅端口(1-65535):" sub_port
-                    [[ -z $sub_port ]] && sub_port=$(shuf -i 2000-65000 -n 1)
-                fi
-            done
-            sed -i 's/listen [0-9]\+;/listen '$sub_port';/g' /etc/nginx/nginx.conf
-            path=$(sed -n 's/.*location \/\([^ ]*\).*/\1/p' /etc/nginx/nginx.conf)
-            server_ip=$(get_realip)
-            restart_nginx
-            green "\n订阅端口更换成功\n"
-            green "新的订阅链接为：http://$server_ip:$sub_port/$path\n"
-            ;; 
+	    [ -z "$sub_port" ] && sub_port=$(shuf -i 2000-65000 -n 1)
+
+	    until [[ -z $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$sub_port") ]]; do
+	        if [[ -n $(netstat -tuln | grep -w tcp | awk '{print $4}' | sed 's/.*://g' | grep -w "$sub_port") ]]; then
+	            echo -e "${red}${sub_port}端口已经被其他程序占用，请更换端口重试${re}"
+	            reading "请输入新的订阅端口(1-65535):" sub_port
+	            [[ -z $sub_port ]] && sub_port=$(shuf -i 2000-65000 -n 1)
+	        fi
+	    done
+
+	    sed -i 's/listen [0-9]\+;/listen '$sub_port';/g' /etc/nginx/nginx.conf
+	    path=$(sed -n 's/.*location \/\([^ ]*\).*/\1/p' /etc/nginx/nginx.conf)
+	    server_ip=$(get_realip)
+	    restart_nginx
+
+	    green "\n订阅端口更换成功\n"
+	    green "新的订阅链接为：http://$server_ip:$sub_port/$path\n"
+	    ;;
         4)  menu ;; 
         *)  red "无效的选项！" ;;
     esac
