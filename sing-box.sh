@@ -1115,14 +1115,42 @@ if [ ${check_singbox} -eq 0 ]; then
             green "\n已关闭节点订阅\n"     
             ;; 
         2)
-            green "\n已开启节点订阅\n"
-            server_ip=$(get_realip)
-            password=$(tr -dc A-Za-z < /dev/urandom | head -c 32) 
-            sed -i -E "s/(location \/)[^ ]+/\1${password//\//\\/}/" /etc/nginx/nginx.conf
-	    sub_port=$(port=$(grep -E 'listen [0-9]+;' /etc/nginx/nginx.conf | awk '{print $2}' | sed 's/;//'); if [ "$port" -eq 80 ]; then echo ""; else echo "$port"; fi)
-            start_nginx
-            (port=$(grep -E 'listen [0-9]+;' /etc/nginx/nginx.conf | awk '{print $2}' | sed 's/;//'); if [ "$port" -eq 80 ]; then echo ""; else green "订阅端口：$port"; fi); link=$(if [ -z "$sub_port" ]; then echo "http://$server_ip/$password"; else echo "http://$server_ip:$sub_port/$password"; fi); green "\n新的节点订阅链接：$link\n"
-            ;; 
+green "\n已开启节点订阅\n"
+server_ip=$(get_realip)
+password=$(tr -dc A-Za-z < /dev/urandom | head -c 32)
+sed -i -E "s/(location \/)[^ ]+/\1${password//\//\\/}/" /etc/nginx/nginx.conf
+
+# 提取 sub_port
+sub_port=$(grep -E 'listen [0-9]+;' /etc/nginx/nginx.conf | awk '{print $2}' | sed 's/;//')
+if [[ ! "$sub_port" =~ ^[0-9]+$ ]]; then
+    sub_port=80  # 设置默认值
+fi
+if [ "$sub_port" -eq 80 ]; then
+    sub_port=""
+fi
+
+start_nginx
+
+# 提取 port
+port=$(grep -E 'listen [0-9]+;' /etc/nginx/nginx.conf | awk '{print $2}' | sed 's/;//')
+if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+    port=80  # 设置默认值
+fi
+if [ "$port" -eq 80 ]; then
+    echo ""
+else
+    green "订阅端口：$port"
+fi
+
+# 生成订阅链接
+link=$(if [ -z "$sub_port" ]; then
+    echo "http://$server_ip/$password"
+else
+    echo "http://$server_ip:$sub_port/$password"
+fi)
+
+green "\n新的节点订阅链接：$link\n"
+;; 
 
         3)
             reading "请输入新的订阅端口(1-65535):" sub_port
